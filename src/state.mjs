@@ -29,7 +29,7 @@ export async function createJob(input,{requestId,newRequest=false}={}){
   const id=crypto.randomUUID();await mkdir(jobDir(id));
   const job={owner:META.name,id,requestId,digest,createdAt:new Date().toISOString(),status:'queued',stage:'created',input,referenceElements:[],references:[],warnings:[]};
   await newJSON(jobFile(id),job);
-  try{await newJSON(index,{owner:META.name,id,digest});}catch(e){if(e.code==='EEXIST'){const old=await readJSON(index);need(old.owner===META.name&&old.digest===digest,'IDEMPOTENCY_CONFLICT','Concurrent request conflict.');return {job:await getJob(old.id),reused:true};}throw e;}
+  try{await newJSON(index,{owner:META.name,id,digest});}catch(e){if(['EEXIST','OUTPUT_EXISTS'].includes(e.code)){const old=await readJSON(index);need(old.owner===META.name&&old.digest===digest,'IDEMPOTENCY_CONFLICT','Concurrent request conflict.');const existing=await getJob(old.id);need(existing.input.output===input.output,'IDEMPOTENCY_CONFLICT','Concurrent request uses another output directory.');return {job:existing,reused:true};}throw e;}
   return {job,reused:false};
 }
 export async function cacheReferences(job){

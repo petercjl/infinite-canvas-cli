@@ -61,3 +61,7 @@ test('same-board conversations submit independently before either remote run com
   const result=await Promise.all([f.job,second].map(j=>processJob(j.id,{...f,driver:driver(j.id),download})));
   assert.deepEqual(result.map(r=>r.status),['succeeded','succeeded']);assert.equal(sent,2);assert.equal(sessions.size,2);assert.equal(maxUI,1);assert.equal(maxFraming,1);assert.equal(f.getContent().elements.filter(e=>e.type==='frame').length,2);
 });
+
+test('simultaneous identical requests reconcile to one payable job',async t=>{
+  const f=await fixture(t);const requests=await Promise.all(Array.from({length:12},()=>createJob(f.input,{requestId:'simultaneous-request'})));assert.equal(new Set(requests.map(r=>r.job.id)).size,1);assert.equal(requests.filter(r=>!r.reused).length,1);
+});
