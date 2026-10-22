@@ -2,7 +2,7 @@
   "schema": "infinite-canvas-capabilities",
   "schema_version": "1.0.0",
   "package": "@petercjl/infinite-canvas-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "input": {
     "required": [
       "canvas_id",

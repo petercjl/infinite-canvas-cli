@@ -1,6 +1,6 @@
 {
   "name": "@petercjl/infinite-canvas-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Drive native Infinite Canvas Agent conversations and organize reference images and results in a Frame.",
   "type": "module",
   "bin": {
