@@ -6,7 +6,7 @@ import {ROOT,META,need,exists,readJSON,newJSON,newFile,replaceOwned,stateRoot,ha
 
 export const SKILL=path.join(ROOT,'skills','infinite-canvas-video');
 export async function treeFiles(root,prefix=''){
-  const out=[];for(const e of await fs.readdir(path.join(root,prefix),{withFileTypes:true})){need(!e.isSymbolicLink(),'UNMANAGED_STATE','Skill resources must not be symbolic links.');const rel=path.join(prefix,e.name);if(e.isDirectory())out.push(...await treeFiles(root,rel));else out.push(rel);}return out.sort();
+  const out=[];for(const e of await fs.readdir(path.join(root,prefix),{withFileTypes:true})){need(!e.isSymbolicLink(),'UNMANAGED_STATE','Skill resources must not be symbolic links.');const rel=path.posix.join(prefix,e.name);if(e.isDirectory())out.push(...await treeFiles(root,rel));else out.push(rel);}return out.sort();
 }
 const marker='.infinite-canvas-managed.json';
 const hashes=async root=>Object.fromEntries(await Promise.all((await treeFiles(root)).filter(n=>n!==marker).map(async n=>[n,hash(await fs.readFile(path.join(root,n)))])));

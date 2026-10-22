@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {installSkill,skillStatus,checkUpdate,updatePolicy,installUpdate} from '../src/lifecycle.mjs';
+import {installSkill,skillStatus,checkUpdate,updatePolicy,installUpdate,treeFiles} from '../src/lifecycle.mjs';
 import {META,hash} from '../src/core.mjs';
 async function fixture(t){const root=await fs.mkdtemp(path.join(os.tmpdir(),'ic-life-'));const old=process.env.INFINITE_CANVAS_STATE_DIR;process.env.INFINITE_CANVAS_STATE_DIR=path.join(root,'state');t.after(async()=>{if(old===undefined)delete process.env.INFINITE_CANVAS_STATE_DIR;else process.env.INFINITE_CANVAS_STATE_DIR=old;await fs.rm(root,{recursive:true,force:true});});return root;}
 test('managed Skill installs, repairs stale bytes in place for locked-directory update, preserves UI metadata and rolls back failure',async t=>{
@@ -30,3 +30,7 @@ test('update detection caches, backs off offline, obeys opt-out and preserves ma
   const cache=path.join(root,'state','update-cache.json');await fs.writeFile(cache,'{"owner":"someone-else","checkedAt":1}');await assert.rejects(checkUpdate({fetcher}),{code:'UNMANAGED_STATE'});assert.equal(await fs.readFile(cache,'utf8'),'{"owner":"someone-else","checkedAt":1}');
 });
 test('source checkout rejects package replacement',async()=>{await assert.rejects(installUpdate({yes:true}),{code:'SOURCE_CHECKOUT'});});
+
+test('managed resource keys use portable slashes for metadata preservation and ownership checks',async t=>{
+  const root=await fixture(t),dest=path.join(root,'skill');await installSkill('codex',dest);const record=JSON.parse(await fs.readFile(path.join(dest,'.infinite-canvas-managed.json')));assert.equal(typeof record.hashes['agents/openai.yaml'],'string');assert.equal(typeof record.hashes['references/runtime.md'],'string');assert.equal((await treeFiles(dest)).every(f=>!f.includes(String.fromCharCode(92))),true);
+});
