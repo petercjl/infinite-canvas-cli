@@ -5,6 +5,13 @@ import crypto from 'node:crypto';
 import {ROOT,META,need,exists,readJSON,newJSON,newFile,replaceOwned,stateRoot,hash,mkdir,lock,execute,Fault} from './core.mjs';
 
 export const SKILL=path.join(ROOT,'skills','infinite-canvas-video');
+export const installationContract={required_components:['cli','skill'],target_scope:'current Agent only',target_resolution:'Agent resolves its own Skill directory; pass --agent and --path',install:'infinite-canvas install --agent AGENT --path SKILL_DIRECTORY --json',update:'infinite-canvas update install --yes --agent AGENT --path SKILL_DIRECTORY --json',verification:'CLI entry/version and managed Skill current=true; partial installation is incomplete'};
+export async function completeInstallation(agent,destination){
+  need(agent,'SKILL_TARGET_REQUIRED','Resolve the current Agent and its Skill directory, then run install --agent AGENT --path DIRECTORY.');
+  const skill=await installSkill(agent,destination);
+  need(skill.installed&&skill.current,'SKILL_SYNC_FAILED','CLI and companion Skill must both be ready.');
+  return {ok:true,complete:true,version:META.version,cli:{entry:path.join(ROOT,'bin/infinite-canvas.mjs'),version:META.version},skill,changed:skill.changed};
+}
 export async function treeFiles(root,prefix=''){
   const out=[];for(const e of await fs.readdir(path.join(root,prefix),{withFileTypes:true})){need(!e.isSymbolicLink(),'UNMANAGED_STATE','Skill resources must not be symbolic links.');const rel=path.posix.join(prefix,e.name);if(e.isDirectory())out.push(...await treeFiles(root,rel));else out.push(rel);}return out.sort();
 }
@@ -65,16 +72,24 @@ export async function checkUpdate({force=false,fetcher=fetch,now=Date.now()}={})
   });
 }
 export async function automaticCheck(){try{const r=await checkUpdate();if(r.update_available&&!r.cached)process.stderr.write(JSON.stringify({update_available:true,current:META.version,latest:r.latest,installation:'explicit update install --yes required'})+'\n');}catch(e){process.stderr.write(JSON.stringify({update_check:'unavailable',code:e.code||'UPDATE_BUSY'})+'\n');}}
-export async function installUpdate({yes,agent,destination}={}){
+export async function installUpdate({yes,agent,destination}={}, {check=checkUpdate,packageRoot=ROOT}={}){
   need(yes,'PERMISSION_REQUIRED','Package update requires --yes.');
-  need(!await exists(path.join(ROOT,'.git')),'SOURCE_CHECKOUT','This is a Git-owned source checkout; update it through its repository.');
-  const version=await checkUpdate({force:true});need(version.published&&version.available,'REGISTRY_UNAVAILABLE','A published version is unavailable.');
-  if(version.latest===META.version){const skill=agent?await installSkill(agent,destination):null;return {ok:true,changed:!!skill?.changed,version:META.version,skill};}
+  need(!await exists(path.join(packageRoot,'.git')),'SOURCE_CHECKOUT','This is a Git-owned source checkout; update it through its repository.');
+  need(agent,'SKILL_TARGET_REQUIRED','Package updates require the current Agent and its Skill target.');
+  const target=await skillStatus(agent,destination);need(!target.edited?.length,'LOCAL_EDITS','Preserve edited Skill files before updating.');
+  const version=await check({force:true});need(version.published&&version.available,'REGISTRY_UNAVAILABLE','A published version is unavailable.');
+  if(version.latest===META.version)return completeInstallation(agent,destination);
   const backup=path.join(stateRoot(),'package-backups',crypto.randomUUID());await mkdir(path.dirname(backup));await fs.cp(ROOT,backup,{recursive:true,errorOnExist:true,force:false});
   try{
-    await execute(process.platform==='win32'?'npm.cmd':'npm',['install','--global',META.name+'@'+version.latest],{timeout:180000,maxBuffer:1024*1024});
-    const entry=process.platform==='win32'?'infinite-canvas.cmd':'infinite-canvas';const r=JSON.parse((await execute(entry,['version','--json'],{timeout:15000})).stdout);need(r.version===version.latest,'UPDATE_VERIFY_FAILED','Installed CLI version differs.');
-    let skill;if(agent){const args=['skill','update','--agent',agent,'--json',...(destination?['--path',destination]:[])];skill=JSON.parse((await execute(entry,args,{timeout:30000})).stdout);need(skill.ok,'SKILL_SYNC_FAILED','Package upgraded but selected Skill did not synchronize.');}
-    return {ok:true,version:r.version,changed:true,backup,skill};
+    const npmCLI=await resolveNpmCLI();await execute(process.execPath,[npmCLI,'install','--global',META.name+'@'+version.latest],{timeout:180000,maxBuffer:1024*1024});
+    const entry=path.join(ROOT,'bin/infinite-canvas.mjs');const r=JSON.parse((await execute(process.execPath,[entry,'version','--json'],{timeout:15000})).stdout);need(r.version===version.latest,'UPDATE_VERIFY_FAILED','Installed CLI version differs.');
+    const args=[entry,'install','--agent',agent,'--path',target.destination,'--json'];const receipt=JSON.parse((await execute(process.execPath,args,{timeout:30000})).stdout);need(receipt.ok&&receipt.complete&&receipt.skill?.current,'SKILL_SYNC_FAILED','Package upgraded but selected Skill did not synchronize.');
+    return {...receipt,changed:true,backup};
   }catch(e){throw new Fault('UPDATE_FAILED','Update did not verify. The complete previous package is backed up.',{backup,cause:e.code||e.message});}
+}
+async function resolveNpmCLI(){
+  const candidates=[process.env.npm_execpath,path.join(path.dirname(process.execPath),'node_modules/npm/bin/npm-cli.js')];
+  for(const dir of (process.env.PATH||'').split(path.delimiter)){const bin=path.join(dir,process.platform==='win32'?'npm.cmd':'npm');try{const real=await fs.realpath(bin);candidates.push(real,path.join(path.dirname(real),'node_modules/npm/bin/npm-cli.js'));}catch{}}
+  for(const file of candidates.filter(Boolean)){if(path.basename(file)==='npm-cli.js'&&await exists(file))return file;}
+  throw new Fault('NPM_UNAVAILABLE','Cannot locate the installed npm CLI JavaScript entry.');
 }

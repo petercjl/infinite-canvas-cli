@@ -5,6 +5,8 @@ These commands are for the executing Agent and developers.
 Browser invariant: one board file, one tab. Reuse the existing tab for that canvas ID. Concurrent tasks use distinct native conversations and captured session/run IDs within that tab. `BOARD_SELECTION_REQUIRED` means resolve duplicate tabs before continuing; preserve the existing tasks. UI submission and canvas writes are queued per board, while remote runs can progress concurrently.
 
 ```sh
+infinite-canvas install --agent AGENT_NAME --path RESOLVED_SKILL_DIR --json
+infinite-canvas update install --yes --agent AGENT_NAME --path RESOLVED_SKILL_DIR --json
 infinite-canvas version --json
 infinite-canvas capabilities --json
 infinite-canvas doctor --json

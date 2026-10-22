@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {META,ROOT,need,parse,readJSON,execute,stateRoot,newJSON,redact,safeId} from '../src/core.mjs';
 import {manifest,HELP} from '../src/contracts.mjs';
-import {automaticCheck,checkUpdate,installUpdate,updatePolicy,SKILL,skillStatus,installSkill} from '../src/lifecycle.mjs';
+import {automaticCheck,checkUpdate,installUpdate,updatePolicy,SKILL,skillStatus,installSkill,completeInstallation,installationContract} from '../src/lifecycle.mjs';
 
 const out=v=>console.log(JSON.stringify(v,null,2));
 async function main(argv){
@@ -12,11 +12,14 @@ async function main(argv){
   if(!command||['help','--help','-h'].includes(command))return console.log(HELP);
   need(Number(process.versions.node.split('.')[0])>=22,'CAPABILITY_UNAVAILABLE','Node.js 22 or newer is required.');
   if(['version','--version','-v'].includes(command)){const {args,options}=parse(argv.slice(1),{booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');return options.json?out({ok:true,name:META.name,version:META.version,entry:path.join(ROOT,'bin/infinite-canvas.mjs')}):console.log('infinite-canvas '+META.version);}
-  if(argv.includes('--help')||argv.includes('-h')){need(['video','task','frame','browser','board','skill','update','doctor','capabilities'].includes(command),'UNKNOWN_COMMAND','Unknown command.');return console.log(HELP);}
+  if(argv.includes('--help')||argv.includes('-h')){need(['install','video','task','frame','browser','board','skill','update','doctor','capabilities'].includes(command),'UNKNOWN_COMMAND','Unknown command.');return console.log(HELP);}
+  if(command==='install'){
+    const {options:o,args}=parse(argv.slice(1),{values:['agent','path'],booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');return out(await completeInstallation(o.agent,o.path));
+  }
   if(command==='_worker'){need(argv.length===2,'INVALID_ARGUMENT','Invalid worker invocation.');const {processJob}=await import('../src/workflow.mjs');return out(await processJob(action));}
   if(command==='skill'){
     const {options:o,args}=parse(rest,{values:['agent','path'],booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');
-    if(action==='source')return out({ok:true,source:SKILL,name:'infinite-canvas-video',version:META.version,installation:{named_agents:['codex'],fallback_agent:'generic',custom_path_required:true,scope:'selected Agent only'}});
+    if(action==='source')return out({ok:true,source:SKILL,name:'infinite-canvas-video',version:META.version,installation:{named_agents:['codex'],fallback_agent:'generic',custom_path_required:true,scope:'selected Agent only',...installationContract}});
     if(action==='status')return out(await skillStatus(o.agent||'codex',o.path));
     need(['install','update'].includes(action),'UNKNOWN_COMMAND','Use skill source/status/install/update.');return out(await installSkill(o.agent||'codex',o.path));
   }

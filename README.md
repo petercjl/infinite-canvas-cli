@@ -8,6 +8,12 @@ Each board file uses exactly one browser tab. Concurrent videos run in separate 
 
 `doctor` distinguishes Chrome installation from runtime state. An installed executable passes the browser dependency check while Chrome is stopped. `browser open` launches or reuses the dedicated instance; video execution prepares it automatically. A port/profile conflict is reported explicitly. Chrome outside the standard paths can be selected with `INFINITE_CANVAS_CHROME_BIN`.
 
+## Installation lifecycle
+
+Installing or updating this plugin means preparing both the CLI and its companion Skill for the current Agent. A successful npm command alone is a partial installation. The executing Agent resolves its own Skill directory, reads `infinite-canvas skill source --json`, and completes `infinite-canvas install --agent AGENT_NAME --path SKILL_DIRECTORY --json`. Verify the CLI version and a receipt with `complete=true`, `skill.installed=true` and `skill.current=true`, then load the installed Skill (refresh the Agent session when required). npm installation prints this handoff; if lifecycle scripts are disabled, follow this same flow explicitly. Unknown destinations require resolution before completion; no other Agent directory is changed.
+
+For updates use `infinite-canvas update install --yes --agent AGENT_NAME --path SKILL_DIRECTORY --json`; this synchronizes the selected Skill even if the npm version is unchanged, and refuses missing or edited/unmanaged targets before package replacement. Direct npm upgrades must be followed by the same `install` verification step.
+
 ## Agent usage
 
 Provide the board ID, prompt and reference image attachments in their intended order. Send the Agent:

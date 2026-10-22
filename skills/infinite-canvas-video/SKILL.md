@@ -19,6 +19,10 @@ Resolve `infinite-canvas` from PATH. Run `version --json`, `capabilities --json`
 
 External dependencies are Node.js 22+, `playwright-core` and `image-size` (package managed), installed Google Chrome on macOS or Windows, and `sealseek-media` with image upload, canvas get/add capabilities. This Skill invokes the helper through the CLI contract; it does not compose another generation Skill. Browser authentication stays in the user's dedicated Chrome profile. Never copy cookies or tokens into a prompt, output or package.
 
+## Installation and update
+
+Treat plugin installation/update as one operation covering the CLI and this companion Skill. Resolve the current Agent’s own Skill directory from its configuration/catalog, read `skill source --json`, then run `install --agent AGENT_NAME --path SKILL_DIRECTORY --json`. For a package upgrade use `update install --yes --agent AGENT_NAME --path SKILL_DIRECTORY --json`; even an unchanged version must reconcile the Skill. If npm was installed/upgraded directly or scripts were disabled, run the same `install` completion step afterward. Completion requires the actual CLI version plus `complete=true`, `skill.installed=true` and `skill.current=true`. Load the synchronized Skill; refresh the host session if discovery requires it. Missing targets or synchronization failure are an incomplete installation. Only the current/requested Agent is synchronized.
+
 ## Main line
 
 1. Validate required inputs and authorization. Run `doctor --json`: its browser check means Chrome is available to launch; `browser_ready` separately reports runtime readiness. Use `browser open --json` to prepare Chrome. The CLI discovers and launches the system browser itself with fixed loopback 9223 and the persistent current-user `.dianshang-chrome-profile`; a separate launcher installation is unnecessary. For a UI compatibility check use `doctor --live --canvas ID --json`. On missing login, have the user sign in in that Chrome window, then return here. The CLI uses CDP port 9223 and the dedicated ecommerce profile. Enforce the single-tab constraint below before any submission or canvas write.

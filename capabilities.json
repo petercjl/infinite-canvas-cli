@@ -3,6 +3,20 @@
   "schema_version": "1.0.0",
   "package": "@petercjl/infinite-canvas-cli",
   "version": "0.1.1",
+  "installationLifecycle": {
+    "required_components": [
+      "cli",
+      "skill"
+    ],
+    "target_scope": "current Agent only",
+    "target_resolution": "Agent resolves its own Skill directory; pass --agent and --path",
+    "install": "infinite-canvas install --agent AGENT --path SKILL_DIRECTORY --json",
+    "update": "infinite-canvas update install --yes --agent AGENT --path SKILL_DIRECTORY --json",
+    "verification": "CLI entry/version and managed Skill current=true; partial installation is incomplete",
+    "skillRequired": true,
+    "updateRequiresSkillSync": true,
+    "unresolvedTarget": "SKILL_TARGET_REQUIRED; no implicit cross-Agent installation"
+  },
   "input": {
     "required": [
       "canvas_id",
@@ -65,6 +79,22 @@
     "generic:windows": "built-in Chrome discovery/startup implemented; actual host video end-to-end verification pending"
   },
   "commandContracts": {
+    "install": {
+      "options": {
+        "--agent": {
+          "type": "string",
+          "required": true
+        },
+        "--path": {
+          "type": "string"
+        },
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write",
+      "output": "Verified CLI and current Agent companion Skill; complete=true only when both are ready"
+    },
     "video generate": {
       "options": {
         "--canvas": {

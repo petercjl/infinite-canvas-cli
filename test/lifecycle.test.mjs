@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {installSkill,skillStatus,checkUpdate,updatePolicy,installUpdate,treeFiles} from '../src/lifecycle.mjs';
+import {installSkill,skillStatus,checkUpdate,updatePolicy,installUpdate,treeFiles,completeInstallation} from '../src/lifecycle.mjs';
 import {META,hash} from '../src/core.mjs';
 async function fixture(t){const root=await fs.mkdtemp(path.join(os.tmpdir(),'ic-life-'));const old=process.env.INFINITE_CANVAS_STATE_DIR;process.env.INFINITE_CANVAS_STATE_DIR=path.join(root,'state');t.after(async()=>{if(old===undefined)delete process.env.INFINITE_CANVAS_STATE_DIR;else process.env.INFINITE_CANVAS_STATE_DIR=old;await fs.rm(root,{recursive:true,force:true});});return root;}
 test('managed Skill installs, repairs stale bytes in place for locked-directory update, preserves UI metadata and rolls back failure',async t=>{
@@ -30,6 +30,23 @@ test('update detection caches, backs off offline, obeys opt-out and preserves ma
   const cache=path.join(root,'state','update-cache.json');await fs.writeFile(cache,'{"owner":"someone-else","checkedAt":1}');await assert.rejects(checkUpdate({fetcher}),{code:'UNMANAGED_STATE'});assert.equal(await fs.readFile(cache,'utf8'),'{"owner":"someone-else","checkedAt":1}');
 });
 test('source checkout rejects package replacement',async()=>{await assert.rejects(installUpdate({yes:true}),{code:'SOURCE_CHECKOUT'});});
+
+test('plugin install verifies both components for an arbitrary current Agent and a Unicode destination',async t=>{
+  const root=await fixture(t),dest=path.join(root,'当前 Agent','infinite-canvas-video');
+  await assert.rejects(completeInstallation(),{code:'SKILL_TARGET_REQUIRED'});
+  const result=await completeInstallation('another-agent',dest);assert.equal(result.complete,true);assert.equal(result.skill.installed,true);assert.equal(result.skill.current,true);assert.equal(result.skill.adapter,'generic');assert.equal(result.cli.version,META.version);
+  assert.equal((await completeInstallation('another-agent',dest)).changed,false);
+});
+test('same-version updates repair missing/stale Skills and stop unresolved or edited targets before registry/package changes',async t=>{
+  const root=await fixture(t),dest=path.join(root,'skill');let checks=0;const options={packageRoot:root,check:async()=>{checks++;return {published:true,available:true,latest:META.version};}};
+  await assert.rejects(installUpdate({yes:true},options),{code:'SKILL_TARGET_REQUIRED'});assert.equal(checks,0);
+  await assert.rejects(installUpdate({yes:true,agent:'another-agent'},options),{code:'INVALID_ARGUMENT'});assert.equal(checks,0);
+  const request={yes:true,agent:'another-agent',destination:dest};const first=await installUpdate(request,options);assert.equal(first.complete,true);assert.equal(first.skill.current,true);
+  const marker=path.join(dest,'.infinite-canvas-managed.json'),record=JSON.parse(await fs.readFile(marker));record.version='0.0.1';await fs.writeFile(marker,JSON.stringify(record));
+  const repaired=await installUpdate(request,options);assert.equal(repaired.complete,true);assert.equal(repaired.changed,true);assert.equal(repaired.skill.current,true);
+  assert.equal((await installUpdate(request,options)).changed,false);
+  await fs.writeFile(path.join(dest,'SKILL.md'),'local edit');const before=checks;await assert.rejects(installUpdate(request,options),{code:'LOCAL_EDITS'});assert.equal(checks,before);
+});
 
 test('managed resource keys use portable slashes for metadata preservation and ownership checks',async t=>{
   const root=await fixture(t),dest=path.join(root,'skill');await installSkill('codex',dest);const record=JSON.parse(await fs.readFile(path.join(dest,'.infinite-canvas-managed.json')));assert.equal(typeof record.hashes['agents/openai.yaml'],'string');assert.equal(typeof record.hashes['references/runtime.md'],'string');assert.equal((await treeFiles(dest)).every(f=>!f.includes(String.fromCharCode(92))),true);

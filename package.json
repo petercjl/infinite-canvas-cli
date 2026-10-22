@@ -23,7 +23,9 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check bin/infinite-canvas.mjs && node --test"
+    "check": "node --check bin/infinite-canvas.mjs && node --test",
+    "postinstall": "node src/postinstall.mjs",
+    "check:packed": "node scripts/check-packed-install.mjs"
   },
   "dependencies": {
     "playwright-core": "1.62.1",
