@@ -4,6 +4,7 @@ import {execute,newJSON,readJSON,exists,canonical,need,Fault} from './core.mjs';
 export class MediaCLI {
   constructor(){this.bin=process.env.INFINITE_CANVAS_MEDIA_BIN||'sealseek-media';}
   async call(args){
+    need(['canvas get','canvas add','image upload'].includes(args.slice(0,2).join(' ')), 'MEDIA_HELPER_SCOPE', 'The media helper only reads/writes canvas media. Video generation uses the native Infinite Canvas Agent.');
     try{const {stdout}=await execute(this.bin,[...args,'--json'],{timeout:90000,maxBuffer:32*1024*1024,env:{...process.env,SEALSEEK_MEDIA_AUTO_UPDATE:'0'}});const r=JSON.parse(stdout);need(r.ok!==false,r.error?.code||'MEDIA_API_FAILED',r.error?.message||'Canvas operation failed.');return r;}
     catch(e){if(e instanceof Fault)throw e;let r;try{r=JSON.parse(e.stdout);}catch{}throw new Fault(r?.error?.code||'MEDIA_CLI_FAILED',r?.error?.message||'sealseek-media could not complete this operation.',{command:args.slice(0,2),cause:e.code});}
   }

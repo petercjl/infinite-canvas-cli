@@ -57,6 +57,12 @@
     "concurrency": "separate conversations in the same tab; queued UI submissions and canvas writes; parallel remote runs",
     "submission": "click native Send",
     "directGenerationAPI": false,
+    "mediaHelperScope": [
+      "canvas.get",
+      "canvas.add",
+      "image.upload"
+    ],
+    "requestedVideoParameters": "Convey task requirements in the prepared native Agent prompt; explicit final prompts stay unchanged; verify actual artifact metadata.",
     "recovery": "saved sessionId/runId; read-only run and history APIs",
     "model": "inherit webpage settings"
   },

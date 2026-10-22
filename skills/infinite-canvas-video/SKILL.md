@@ -9,7 +9,7 @@ Execute an explicitly selected canvas video request with the installed `infinite
 
 ## Input and output
 
-Require a board file ID, the exact prompt and 1–20 ordered PNG, JPEG or WebP references (local paths or HTTPS URLs). Ask only for missing required inputs. Preserve the prompt and image order; 图1 means the first attached image. Inherit model settings from the webpage. An authorized generation request allows one paid native Agent submission. A planning or dry-run request allows validation only.
+Require an existing board file ID or an explicit request to create a named board, the exact prompt and 1–20 ordered PNG, JPEG or WebP references (local paths or HTTPS URLs). Ask only for missing required inputs. Preserve the prompt and image order; 图1 means the first attached image. Use the webpage model and native Agent workflow. When composing the execution prompt from a task, include the requested duration, aspect ratio, resolution and reference order in natural language. Preserve a final prompt explicitly supplied verbatim; resolve conflicts with webpage settings before submission. The absence of separate CLI flags is not evidence that the webpage Agent cannot receive these requirements. An authorized generation request allows one paid native Agent submission. A planning or dry-run request allows validation only.
 
 Return the local MP4 from `artifacts[].path`, task ID, board ID and Frame ID. Success means `status=succeeded`, a nonempty downloaded video, original reference node IDs plus one video node in the saved Frame, and verified readback. A generated video with unfinished grouping is a partial result, reported with its task ID and recovery action.
 
@@ -18,6 +18,14 @@ Return the local MP4 from `artifacts[].path`, task ID, board ID and Frame ID. Su
 Resolve `infinite-canvas` from PATH. Run `version --json`, `capabilities --json` and `skill source --json` to inspect the installed implementation and current canonical Skill. Minimum contract: native Agent Send, ordered references, existing-node grouping, task get/wait/resume, local video output. Load the selected host adapter in `adapters/`; `generic.json` is the portable fallback. If the entry or required feature is missing, return `CAPABILITY_UNAVAILABLE`; report the missing dependency instead of substituting another generation provider.
 
 External dependencies are Node.js 22+, `playwright-core` and `image-size` (package managed), installed Google Chrome on macOS or Windows, and `sealseek-media` with image upload, canvas get/add capabilities. This Skill invokes the helper through the CLI contract; it does not compose another generation Skill. Browser authentication stays in the user's dedicated Chrome profile. Never copy cookies or tokens into a prompt, output or package.
+
+## Generation route and helper boundary
+
+Video generation in this Skill always uses `infinite-canvas video generate`: one native Agent conversation and the webpage Send button. `sealseek-media` supplies canvas and media-management operations only. Never call its video/image generation commands or load its generation Skill as an alternative workflow. A missing flag, authentication error or UI issue does not authorize changing the generation route.
+
+Use the supplied board ID. If the user explicitly requests a new board, create it through the helper's documented `canvas create --title TITLE --submit --json`, retain the returned canvas ID and return to this Skill's native video flow. The helper may require its own CLI login for canvas reads/writes and image upload; browser login and CLI authentication are separate. On `AUTH_REJECTED`, complete the helper's normal `auth login` flow and verify it before resuming the same canvas operation. Login does not authorize generation.
+
+Inspect `capabilities` and dry-run output to distinguish explicit command options, inherited webpage settings and requirements conveyed in the prompt. Report a specific unverified or unsupported requirement accurately. Verify the actual returned video's dimensions and duration when inspection is available; a prompt or local dry run alone is not proof of delivery parameters.
 
 ## Installation and update
 
