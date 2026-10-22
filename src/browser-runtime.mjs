@@ -57,7 +57,7 @@ export class ChromeRuntime {
       const network=await this.exec(path.win32.join(this.env.SystemRoot||this.env.WINDIR||'C:\\Windows','System32','netstat.exe'),['-ano','-p','tcp'],{timeout:5000,maxBuffer:2*1024*1024,windowsHide:true});
       const connections=windowsListeners(network.stdout),pids=[...new Set(connections.map(p=>p.pid))];if(!pids.length)return [];
       const script=psPrefix+'$result=@(foreach($id in @('+pids.join(',')+')){ $p=Get-CimInstance Win32_Process -Filter ("ProcessId = "+$id); [pscustomobject]@{pid=$p.ProcessId;name=$p.Name;command=$p.CommandLine} }); ConvertTo-Json -InputObject $result -Compress';
-      const {stdout}=await this.exec(powershell(this.env),['-NoProfile','-NonInteractive','-Command',script],{timeout:8000,maxBuffer:1024*1024,windowsHide:true});const data=JSON.parse(stdout.replace(/^\uFEFF/,''));return (Array.isArray(data)?data:[data]).map(p=>({...p,addresses:connections.filter(c=>c.pid===p.pid).map(c=>c.address)}));
+      const {stdout}=await this.exec(powershell(this.env),['-NoProfile','-NonInteractive','-Command',script],{timeout:30000,maxBuffer:1024*1024,windowsHide:true});const data=JSON.parse(stdout.replace(/^\uFEFF/,''));return (Array.isArray(data)?data:[data]).map(p=>({...p,addresses:connections.filter(c=>c.pid===p.pid).map(c=>c.address)}));
     }
     if(this.platform==='darwin'){
       const {stdout}=await this.exec('/usr/sbin/lsof',['-b','-nP','-t','-iTCP:9223','-sTCP:LISTEN'],{timeout:5000});const pids=[...new Set(stdout.trim().split(/\s+/).filter(v=>/^\d+$/.test(v)))];
@@ -87,7 +87,7 @@ export class ChromeRuntime {
     need(value.cdp===CDP&&this.paths.resolve(value.profile||'')===this.profile,'PROFILE_MISMATCH','Configured launcher must use port 9223 and the current-user dedicated profile.');
     const own=await this.status();need(!own.error,own.error?.code||'BROWSER_UNAVAILABLE',own.error?.message||'Browser verification failed.');return {...own,source:'configured-launcher'};
   }
-  async open({timeoutMs=25000}={}){
+  async open({timeoutMs=60000}={}){
     if(this.env.INFINITE_CANVAS_BROWSER_BIN){await this.configuredLauncher('open');const result=await this.status();need(result.ready,'BROWSER_UNAVAILABLE','Configured launcher did not make Chrome ready.');return result;}
     const end=Date.now()+timeoutMs;
     while(Date.now()<end){

@@ -51,7 +51,7 @@ test('an unready CDP endpoint is not confused with a missing Chrome installation
 });
 test('Windows ownership uses bounded built-in PowerShell commands and normalizes UTF-8 JSON',async()=>{
   let call;const d=new ChromeRuntime({platform:'win32',env:{},exec:async(...args)=>{if(args[0].endsWith('netstat.exe'))return {stdout:'  TCP  127.0.0.1:9223  0.0.0.0:0  LISTENING  123\r\n'};call=args;return {stdout:'\uFEFF[{"pid":123,"name":"chrome.exe","command":"中文"}]'};}});
-  const owner=(await d.owners())[0];assert.equal(owner.command,'中文');assert.deepEqual(owner.addresses,['127.0.0.1']);assert.match(call[0],/powershell\.exe$/);assert.match(call[1].at(-1),/Get-CimInstance/);assert.equal(call[2].timeout,8000);
+  const owner=(await d.owners())[0];assert.equal(owner.command,'中文');assert.deepEqual(owner.addresses,['127.0.0.1']);assert.match(call[0],/powershell\.exe$/);assert.match(call[1].at(-1),/Get-CimInstance/);assert.equal(call[2].timeout,30000);
 });
 test('Windows TCP ownership parsing handles IPv4, IPv6, localized headings and unrelated connections',()=>{
   assert.deepEqual(windowsListeners('活动连接\r\nTCP 127.0.0.1:9223 0.0.0.0:0 LISTENING 123\r\nTCP [::1]:9223 [::]:0 LISTENING 123\r\nTCP 127.0.0.1:92230 0.0.0.0:0 LISTENING 999\r\nTCP 127.0.0.1:9223 127.0.0.1:5500 ESTABLISHED 123'),[{pid:123,address:'127.0.0.1'},{pid:123,address:'::1'}]);
