@@ -62,6 +62,6 @@ test('a configured legacy launcher failure is explicit rather than bypassed',asy
 test('native Chrome startup and CDP ownership on the actual hosted operating system',{skip:!process.env.GITHUB_ACTIONS||!['darwin','win32'].includes(process.platform),timeout:90000},async()=>{
   const env={...process.env};delete env.INFINITE_CANVAS_BROWSER_BIN;delete env.INFINITE_CANVAS_CHROME_BIN;
   const d=new ChromeRuntime({env,headless:true,startupUrl:'about:blank'});const before=await d.status();assert.equal(before.chrome.installed,true);assert.equal(before.running,false,'CI must start without another 9223 browser');
-  const ready=await d.open({timeoutMs:60000});assert.equal(ready.ready,true);assert.equal(ready.started,true);
+  let ready;try{ready=await d.open({timeoutMs:60000});}catch(error){try{await d.owners();}catch(cause){console.error('CI ownership diagnostic:',{code:cause.code,killed:cause.killed,stderr:cause.stderr,message:cause.message});}throw error;}assert.equal(ready.ready,true);assert.equal(ready.started,true);
   const browser=await chromium.connectOverCDP(CDP);try{const session=await browser.newBrowserCDPSession();await session.send('Browser.close');}finally{await browser.close().catch(()=>{});}
 });
