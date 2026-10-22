@@ -2,9 +2,11 @@
 
 `@petercjl/infinite-canvas-cli` uses an existing SealSeek Infinite Canvas board to generate videos through its native Agent conversation. It imports ordered reference images, sends the supplied prompt in a fresh conversation, downloads the video, and groups the original image nodes and video node in a Frame.
 
-This package requires Node.js 22+, the independent ecommerce Chrome launcher and an installed `sealseek-media` CLI supporting image upload and canvas get/add. The browser uses port 9223 and the dedicated ecommerce profile. The website supplies the selected model and authenticated account. Each authorized generation can incur charges.
+This package requires Node.js 22+, installed Google Chrome on macOS or Windows and an installed `sealseek-media` CLI supporting image upload and canvas get/add. The package discovers and launches Chrome itself on loopback port 9223 with a persistent current-user dedicated profile. Browser login is completed in that window. The website supplies the selected model and authenticated account. Each authorized generation can incur charges.
 
 Each board file uses exactly one browser tab. Concurrent videos run in separate Agent conversations within that tab; UI submissions and canvas writes are queued while remote generation runs in parallel. Duplicate tabs must be resolved before submission or saving.
+
+`doctor` distinguishes Chrome installation from runtime state. An installed executable passes the browser dependency check while Chrome is stopped. `browser open` launches or reuses the dedicated instance; video execution prepares it automatically. A port/profile conflict is reported explicitly. Chrome outside the standard paths can be selected with `INFINITE_CANVAS_CHROME_BIN`.
 
 ## Agent usage
 
@@ -14,19 +16,19 @@ Provide the board ID, prompt and reference image attachments in their intended o
 
 To install:
 
-> 安装 @petercjl/infinite-canvas-cli，并将配套 Skill 安装到本机 Codex。
+> 安装 @petercjl/infinite-canvas-cli 及其配套 Skill。
 
 To update:
 
-> 更新 @petercjl/infinite-canvas-cli 及其本机 Codex 配套 Skill。
+> 更新 @petercjl/infinite-canvas-cli 及其配套 Skill。
 
 To recover:
 
 > 使用 infinite-canvas，恢复任务「任务ID」。
 
-To update the selected local Codex Skill:
+To synchronize the current Agent’s Skill:
 
-> 将 infinite-canvas 当前安装包配套的 Skill 同步到本机 Codex。
+> 将 infinite-canvas 当前安装包的配套 Skill 同步到当前 Agent。
 
 Codex/macOS has completed six live video tasks across two boards. Other Agent adapters require runtime verification.
 

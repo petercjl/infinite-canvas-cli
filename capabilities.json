@@ -27,6 +27,7 @@
   },
   "operations": [
     "browser.status",
+    "browser.open",
     "board.inspect",
     "video.generate.native-agent",
     "task.inspect",
@@ -47,7 +48,7 @@
   },
   "dependencies": {
     "node": ">=22",
-    "browser": "ecommerce-browser, fixed loopback CDP 9223 and current-user ecommerce profile",
+    "browser": "Installed Google Chrome; built-in macOS/Windows discovery and startup on loopback 9223 with current-user dedicated profile",
     "canvasAPI": "sealseek-media >=0.6.7, public CLI commands",
     "libraries": [
       "playwright-core",
@@ -61,7 +62,7 @@
     "codex:macos": "tested: six native Agent video tasks across two boards; one tab per board; downloads, deduplication and Frame readback verified",
     "generic:macos": "spec-compatible, runtime untested",
     "sealseek:macos": "spec-compatible, runtime untested",
-    "generic:windows": "runtime unresolved: ecommerce browser launcher required"
+    "generic:windows": "built-in Chrome discovery/startup implemented; actual host video end-to-end verification pending"
   },
   "commandContracts": {
     "video generate": {
@@ -137,6 +138,24 @@
       },
       "sideEffects": "local-write",
       "externalMutation": "With --submit: reparent existing nodes and preserve their identities."
+    },
+    "browser status": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "none",
+      "output": "Chrome availability and separate CDP runtime readiness"
+    },
+    "browser open": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write",
+      "externalMutation": "Launch or reuse system Chrome on loopback 9223 with the current-user dedicated profile; no generation."
     },
     "doctor": {
       "options": {

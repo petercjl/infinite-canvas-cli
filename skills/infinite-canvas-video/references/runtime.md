@@ -8,10 +8,12 @@ Browser invariant: one board file, one tab. Reuse the existing tab for that canv
 infinite-canvas version --json
 infinite-canvas capabilities --json
 infinite-canvas doctor --json
+infinite-canvas browser status --json
+infinite-canvas browser open --json
 infinite-canvas skill source --json
-infinite-canvas skill status --agent codex --json
-infinite-canvas skill install --agent codex --json
-infinite-canvas skill update --agent codex --json
+infinite-canvas skill status --agent AGENT_NAME --path RESOLVED_SKILL_DIR --json
+infinite-canvas skill install --agent AGENT_NAME --path RESOLVED_SKILL_DIR --json
+infinite-canvas skill update --agent AGENT_NAME --path RESOLVED_SKILL_DIR --json
 infinite-canvas video generate --canvas BOARD_ID --prompt-file PROMPT_FILE --reference IMAGE_1 --reference IMAGE_2 --dry-run --json
 infinite-canvas video generate --canvas BOARD_ID --prompt-file PROMPT_FILE --reference IMAGE_1 --reference IMAGE_2 --submit --json
 infinite-canvas task get TASK_ID --json
@@ -28,3 +30,9 @@ infinite-canvas update auto off --json
 State resides under the user's application-data directory (`INFINITE_CANVAS_STATE_DIR` can select another private location). It contains task state, reference copies, readback backups, download metadata and worker logs. Preserve it for recovery; treat media URLs and prompts as private. `INFINITE_CANVAS_AUTO_UPDATE=0` disables automatic registry detection. Explicit update installation requires `update install --yes`, refuses source checkouts and backs up the installed package. Unpublished development versions have no registry update available.
 
 The CLI never prints browser credentials. Changing source, a live webpage deployment or a helper CLI version may require revalidation. JSON failures include `error.code` and `error.message`; keep the original task ID in user-facing recovery advice.
+
+## Built-in Chrome runtime
+
+Only Google Chrome is an external browser prerequisite. macOS discovery checks system and current-user Applications; Windows checks per-user and Program Files locations, then App Paths registry entries. `INFINITE_CANVAS_CHROME_BIN` selects an actual executable for a custom installation. No extra launcher is required. `INFINITE_CANVAS_BROWSER_BIN` remains an explicit legacy override and is verified against the same port/profile contract.
+
+`browser status` is read-only. `chrome.installed` and `available` describe installation; `running` and `ready` describe the dedicated instance. A stopped but installed Chrome passes the browser dependency check in `doctor`. `browser open` and normal video execution launch/reuse it, verify process ownership, loopback CDP 9223 and the current-user profile. On Windows this profile is under the current home directory; on macOS it is under the current home directory with the same `.dianshang-chrome-profile` name. Windows uses built-in PowerShell process/TCP queries; macOS uses bounded nonblocking system process queries. Startup is queued so concurrent jobs share the browser. `doctor --live --canvas ID` requires the running, authenticated, editable board as well.

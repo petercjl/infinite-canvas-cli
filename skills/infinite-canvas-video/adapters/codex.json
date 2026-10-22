@@ -17,7 +17,7 @@
       "implementation": {
         "kind": "cli",
         "command": "infinite-canvas",
-        "instructions": "Resolve from PATH. Run version, capabilities and doctor. Requires Node.js >=22, ecommerce-browser and sealseek-media. Use structured JSON. Codex/macOS end-to-end verified with six native Agent videos across two boards, one tab per board, downloads and saved Frame readback. Other hosts require their own runtime validation."
+        "instructions": "Resolve from PATH. Run version, capabilities and doctor. Requires Node.js >=22, installed Google Chrome and sealseek-media; Chrome discovery/startup is bundled for macOS and Windows. Use structured JSON. Codex/macOS end-to-end verified with six native Agent videos across two boards, one tab per board, downloads and saved Frame readback. Other hosts require their own runtime validation."
       }
     }
   ]

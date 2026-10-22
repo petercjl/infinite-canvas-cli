@@ -1,9 +1,9 @@
 import path from 'node:path';
-import os from 'node:os';
 import crypto from 'node:crypto';
 import {chromium} from 'playwright-core';
-import {execute,need,Fault,sleep,hash,canonical,newJSON,lock} from './core.mjs';
+import {need,Fault,sleep,newJSON,lock} from './core.mjs';
 import {sceneSignature,verifyGrouping} from './frame.mjs';
+import {ChromeRuntime} from './browser-runtime.mjs';
 
 export const LOCATORS={newChat:'button:has(svg.lucide-square-plus)',upload:'input[type=file][accept="image/*,video/mp4,video/webm,video/*"]',editor:'[contenteditable=true][role=textbox]',send:'button[aria-label="发送消息"]'};
 export async function handleBrowserDialog(dialog){try{if(dialog.type()==='beforeunload'||dialog.type()==='alert')await dialog.accept();else await dialog.dismiss();return true;}catch{return false;}}
@@ -25,12 +25,9 @@ export function nativeSubmission(body,expectedPrompt,files){
 export class BrowserDriver {
   async connect(canvasId,{open=true}={}){
     this.canvasId=canvasId;
-    let launcher=process.env.INFINITE_CANVAS_BROWSER_BIN||'ecommerce-browser',r;
-    try{r=await execute(launcher,['status','--json'],{timeout:15000});}catch(e){if(e.code==='ENOENT'&&!process.env.INFINITE_CANVAS_BROWSER_BIN){launcher=path.join(os.homedir(),'.local','bin','ecommerce-browser');r=await execute(launcher,['status','--json'],{timeout:15000});}else throw new Fault('BROWSER_UNAVAILABLE','Cannot inspect the ecommerce browser.');}
-    let status=JSON.parse(r.stdout);if(status.state!=='ready'&&open){await execute(launcher,['open'],{timeout:30000});status=JSON.parse((await execute(launcher,['status','--json'],{timeout:15000})).stdout);}
+    const runtime=new ChromeRuntime();
+    const status=open?await runtime.open():await runtime.configuredLauncher('status')||await runtime.status();
     need(status.state==='ready'&&status.cdp==='http://127.0.0.1:9223','BROWSER_UNAVAILABLE','The fixed ecommerce CDP browser is unavailable.');
-    const profile=path.join(os.homedir(),'.dianshang-chrome-profile');need(path.resolve(status.profile)===profile,'PROFILE_MISMATCH','Ecommerce browser profile mismatch.');
-    if(process.platform!=='win32'){let verified=false;for(const pid of status.pids||[]){try{const ps=await execute('ps',['-p',String(pid),'-o','command=']);verified ||= ps.stdout.includes('--remote-debugging-port=9223')&&ps.stdout.includes('--user-data-dir='+profile);}catch{}}need(verified,'PROFILE_MISMATCH','Chrome process arguments could not be verified.');}
     this.status=status;this.browser=await chromium.connectOverCDP(status.cdp,{timeout:15000});
     for(const context of this.browser.contexts()){for(const page of context.pages())page.on('dialog',handleBrowserDialog);context.on('page',page=>page.on('dialog',handleBrowserDialog));}
     await this.composerLock(()=>this.selectBoardTab({open}));
