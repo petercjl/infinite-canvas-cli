@@ -33,7 +33,7 @@ export const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 export function alive(pid){try{process.kill(pid,0);return true;}catch{return false;}}
 export async function lock(key,fn,{root=stateRoot()}={}){
   const p=path.join(root,'locks',hash(key)+'.json');await mkdir(path.dirname(p));
-  if(await exists(p)){const old=await readJSON(p);need(old.owner===META.name,'UNMANAGED_STATE','Unrecognized lock.');need(!alive(old.pid),'BUSY','Another process owns this operation.',{pid:old.pid});await fs.rename(p,p+'.'+crypto.randomUUID()+'.abandoned');}
+  if(await exists(p)){let old;try{old=await readJSON(p);}catch(e){if(e.code==='ENOENT')return lock(key,fn,{root});if(e instanceof SyntaxError)throw new Fault('BUSY','Another process is committing its lock.');throw e;}need(old.owner===META.name,'UNMANAGED_STATE','Unrecognized lock.');need(!alive(old.pid),'BUSY','Another process owns this operation.',{pid:old.pid});await fs.rename(p,p+'.'+crypto.randomUUID()+'.abandoned');}
   try{await newJSON(p,{owner:META.name,pid:process.pid,key,createdAt:new Date().toISOString()});}catch(e){if(['EEXIST','OUTPUT_EXISTS'].includes(e.code))throw new Fault('BUSY','Operation is already locked.');throw e;}
   try{return await fn();}finally{await fs.unlink(p);}
 }
