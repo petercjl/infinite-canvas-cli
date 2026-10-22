@@ -11,6 +11,9 @@ export const PROFILE_NAME='.dianshang-chrome-profile';
 const escapeRE=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const powershell=env=>path.win32.join(env.SystemRoot||env.WINDIR||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe');
 const psPrefix='$ErrorActionPreference="Stop"; [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); ';
+export function windowsListeners(output){
+  return String(output).split(/\r?\n/).map(line=>line.trim().split(/\s+/)).filter(row=>row.length===5&&/^TCP$/i.test(row[0])&&row[1].endsWith(':9223')&&/^\d+$/.test(row[4])&&['0.0.0.0:0','[::]:0'].includes(row[2])).map(row=>({pid:Number(row[4]),address:row[1].slice(0,-5).replace(/^\[|\]$/g,'')}));
+}
 
 export function chromeCandidates({platform=process.platform,env=process.env,home=os.homedir()}={}){
   const p=platform==='win32'?path.win32:path.posix;
@@ -51,8 +54,10 @@ export class ChromeRuntime {
   }
   async owners(){
     if(this.platform==='win32'){
-      const script=psPrefix+'$connections=@(Get-NetTCPConnection -LocalPort 9223 -State Listen -ErrorAction SilentlyContinue); $result=@(foreach($id in @($connections.OwningProcess|Select-Object -Unique)){ $p=Get-CimInstance Win32_Process -Filter ("ProcessId = "+$id); [pscustomobject]@{pid=$p.ProcessId;name=$p.Name;command=$p.CommandLine;addresses=@($connections|Where-Object OwningProcess -eq $id|Select-Object -ExpandProperty LocalAddress)} }); ConvertTo-Json -InputObject $result -Compress';
-      const {stdout}=await this.exec(powershell(this.env),['-NoProfile','-NonInteractive','-Command',script],{timeout:8000,maxBuffer:1024*1024,windowsHide:true});const data=JSON.parse(stdout.replace(/^\uFEFF/,''));return Array.isArray(data)?data:[data];
+      const network=await this.exec(path.win32.join(this.env.SystemRoot||this.env.WINDIR||'C:\\Windows','System32','netstat.exe'),['-ano','-p','tcp'],{timeout:5000,maxBuffer:2*1024*1024,windowsHide:true});
+      const connections=windowsListeners(network.stdout),pids=[...new Set(connections.map(p=>p.pid))];if(!pids.length)return [];
+      const script=psPrefix+'$result=@(foreach($id in @('+pids.join(',')+')){ $p=Get-CimInstance Win32_Process -Filter ("ProcessId = "+$id); [pscustomobject]@{pid=$p.ProcessId;name=$p.Name;command=$p.CommandLine} }); ConvertTo-Json -InputObject $result -Compress';
+      const {stdout}=await this.exec(powershell(this.env),['-NoProfile','-NonInteractive','-Command',script],{timeout:8000,maxBuffer:1024*1024,windowsHide:true});const data=JSON.parse(stdout.replace(/^\uFEFF/,''));return (Array.isArray(data)?data:[data]).map(p=>({...p,addresses:connections.filter(c=>c.pid===p.pid).map(c=>c.address)}));
     }
     if(this.platform==='darwin'){
       const {stdout}=await this.exec('/usr/sbin/lsof',['-b','-nP','-t','-iTCP:9223','-sTCP:LISTEN'],{timeout:5000});const pids=[...new Set(stdout.trim().split(/\s+/).filter(v=>/^\d+$/.test(v)))];

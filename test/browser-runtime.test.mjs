@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {ChromeRuntime,chromeCandidates,chromeArgs,dedicatedCommand,CDP} from '../src/browser-runtime.mjs';
+import {ChromeRuntime,chromeCandidates,chromeArgs,dedicatedCommand,CDP,windowsListeners} from '../src/browser-runtime.mjs';
 import {chromium} from 'playwright-core';
 
 function fixture(platform='darwin',extra={}){
@@ -50,8 +50,11 @@ test('an unready CDP endpoint is not confused with a missing Chrome installation
   const f=fixture('darwin',{fetcher:async()=>{throw Error('starting');}});f.setRunning(true);const s=await f.runtime.status();assert.equal(s.ok,true);assert.equal(s.ready,false);assert.equal(s.state,'starting');
 });
 test('Windows ownership uses bounded built-in PowerShell commands and normalizes UTF-8 JSON',async()=>{
-  let call;const d=new ChromeRuntime({platform:'win32',env:{},exec:async(...args)=>{call=args;return {stdout:'\uFEFF[{"pid":123,"name":"chrome.exe","command":"中文","addresses":["127.0.0.1"]}]'};}});
-  assert.equal((await d.owners())[0].command,'中文');assert.match(call[0],/powershell\.exe$/);assert.match(call[1].at(-1),/Get-NetTCPConnection/);assert.equal(call[2].timeout,8000);
+  let call;const d=new ChromeRuntime({platform:'win32',env:{},exec:async(...args)=>{if(args[0].endsWith('netstat.exe'))return {stdout:'  TCP  127.0.0.1:9223  0.0.0.0:0  LISTENING  123\r\n'};call=args;return {stdout:'\uFEFF[{"pid":123,"name":"chrome.exe","command":"中文"}]'};}});
+  const owner=(await d.owners())[0];assert.equal(owner.command,'中文');assert.deepEqual(owner.addresses,['127.0.0.1']);assert.match(call[0],/powershell\.exe$/);assert.match(call[1].at(-1),/Get-CimInstance/);assert.equal(call[2].timeout,8000);
+});
+test('Windows TCP ownership parsing handles IPv4, IPv6, localized headings and unrelated connections',()=>{
+  assert.deepEqual(windowsListeners('活动连接\r\nTCP 127.0.0.1:9223 0.0.0.0:0 LISTENING 123\r\nTCP [::1]:9223 [::]:0 LISTENING 123\r\nTCP 127.0.0.1:92230 0.0.0.0:0 LISTENING 999\r\nTCP 127.0.0.1:9223 127.0.0.1:5500 ESTABLISHED 123'),[{pid:123,address:'127.0.0.1'},{pid:123,address:'::1'}]);
 });
 test('a configured legacy launcher failure is explicit rather than bypassed',async()=>{
   const d=new ChromeRuntime({env:{INFINITE_CANVAS_BROWSER_BIN:'missing-launcher'},exec:async()=>{throw Error('missing');}});await assert.rejects(d.configuredLauncher('status'),{code:'BROWSER_UNAVAILABLE'});
