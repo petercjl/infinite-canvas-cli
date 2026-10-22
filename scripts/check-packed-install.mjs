@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
 import {execute,ROOT,META} from '../src/core.mjs';
 
 const root=await fs.mkdtemp(path.join(os.tmpdir(),'ic-packed-'));
@@ -22,6 +23,8 @@ try{
     const request=['install','--agent','custom-agent','--path',dest,'--json'];
     const first=await invoke(request);assert.equal(first.complete,true);assert.equal(first.skill.current,true);
     assert.equal((await invoke(request)).changed,false);
+    const probe=await import(pathToFileURL(path.join(prefix,'node_modules',...META.name.split('/'),'src/ffprobe.mjs')).href);
+    const readiness=probe.ffprobeStatus();assert.equal(readiness.ok,true,JSON.stringify(readiness));assert.equal(readiness.source,'package');
     const status=await invoke(['skill','status','--agent','custom-agent','--path',dest,'--json']);assert.equal(status.current,true);
   }
   console.log(JSON.stringify({ok:true,version:META.version,packedInstall:true,scriptsDisabled:true,currentAgentSkillVerified:true}));

@@ -2,6 +2,7 @@ import {META} from './core.mjs';
 import {installationContract} from './lifecycle.mjs';
 const s={type:'string'},b={type:'boolean'};
 export const commandContracts={
+  'dependencies setup':{options:{'--json':b},sideEffects:'local-write',output:'Verify the npm-managed ffprobe; restore its executable bit on POSIX if install scripts were blocked.'},
   'install':{options:{'--agent':{...s,required:true},'--path':s,'--json':b},sideEffects:'local-write',output:'Verified CLI and current Agent companion Skill; complete=true only when both are ready'},
   'video generate':{options:{'--canvas':s,'--prompt':s,'--prompt-file':s,'--reference':{...s,repeatable:true},'--output':s,'--request-id':s,'--new':b,'--submit':b,'--dry-run':b,'--json':b},sideEffects:'local-write',externalMutation:'With --submit: import references, send native Agent conversation, import a missing video, group selected elements in a Frame.',paid:'Only native webpage sending may charge credits.'},
   'task get|wait|resume|sync':{options:{'--timeout':s,'--json':b},sideEffects:'local-write',externalMutation:'resume continues original task; sync reapplies existing video archival and grouping; never a second generation.'},
@@ -44,6 +45,7 @@ frame group --canvas ID --elements IDS.json --frame-id ID [--name TEXT]
 browser status --json                       (read-only installation and runtime state)
 browser open --json                         (built-in system Chrome startup/reuse)
 board inspect --canvas ID --json
+dependencies setup --json                  (verify/repair npm-managed ffprobe)
 doctor [--live --canvas ID] --json
 capabilities --json
 version [--json]

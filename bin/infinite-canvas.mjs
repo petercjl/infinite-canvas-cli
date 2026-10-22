@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
-import {ffprobeStatus} from '../src/ffprobe.mjs';
+import {ffprobeStatus,setupFFprobe} from '../src/ffprobe.mjs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {META,ROOT,need,parse,readJSON,execute,stateRoot,newJSON,redact,safeId} from '../src/core.mjs';
@@ -14,8 +14,9 @@ async function main(argv){
   need(Number(process.versions.node.split('.')[0])>=22,'CAPABILITY_UNAVAILABLE','Node.js 22 or newer is required.');
   if(['version','--version','-v'].includes(command)){const {args,options}=parse(argv.slice(1),{booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');return options.json?out({ok:true,name:META.name,version:META.version,entry:path.join(ROOT,'bin/infinite-canvas.mjs')}):console.log('infinite-canvas '+META.version);}
   if(argv.includes('--help')||argv.includes('-h')){need(['install','video','task','frame','browser','board','skill','update','doctor','capabilities'].includes(command),'UNKNOWN_COMMAND','Unknown command.');return console.log(HELP);}
+  if(command==='dependencies'&&action==='setup'){const {args}=parse(rest,{booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');const check=setupFFprobe();if(!check.ok)process.exitCode=1;return out({ok:check.ok,ffprobe:check});}
   if(command==='install'){
-    const {options:o,args}=parse(argv.slice(1),{values:['agent','path'],booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');return out(await completeInstallation(o.agent,o.path));
+    const {options:o,args}=parse(argv.slice(1),{values:['agent','path'],booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');const dependency=setupFFprobe();need(dependency.ok,'DEPENDENCY_UNAVAILABLE',dependency.error?.message,{dependency:'ffprobe'});return out(await completeInstallation(o.agent,o.path));
   }
   if(command==='_worker'){need(argv.length===2,'INVALID_ARGUMENT','Invalid worker invocation.');const {processJob}=await import('../src/workflow.mjs');return out(await processJob(action));}
   if(command==='skill'){

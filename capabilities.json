@@ -89,6 +89,15 @@
     "generic:windows": "built-in Chrome discovery/startup implemented; actual host video end-to-end verification pending"
   },
   "commandContracts": {
+    "dependencies setup": {
+      "options": {
+        "--json": {
+          "type": "boolean"
+        }
+      },
+      "sideEffects": "local-write",
+      "output": "Verify the npm-managed ffprobe; restore its executable bit on POSIX if install scripts were blocked."
+    },
     "install": {
       "options": {
         "--agent": {

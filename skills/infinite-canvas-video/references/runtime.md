@@ -51,3 +51,5 @@ On Windows, use the host's declared shell and text-encoding contract. Keep JSON 
 ## Video inspection dependency
 
 The npm package manages `@ffprobe-installer/ffprobe` and its platform binary. `doctor --json` includes `checks.ffprobe` with readiness, version and executable source. `INFINITE_CANVAS_FFPROBE_BIN` explicitly overrides the binary; PATH is used when the packaged probe is unavailable. Install with npm optional dependencies enabled. A failed preflight stops before paid submission. For an existing task, dependency repair followed by `task resume` reuses its native session/run and generated video. Exact dimensions and duration require actual metadata inspection.
+
+When npm blocks dependency lifecycle scripts, `dependencies setup --json` restores the executable bit only on the canonical npm-managed ffprobe binary and verifies its version. It preserves configured external binaries. Ordinary doctor/inspection stays read-only; missing platform packages require installation with optional dependencies enabled.
