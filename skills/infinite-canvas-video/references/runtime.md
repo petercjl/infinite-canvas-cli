@@ -47,3 +47,7 @@ Only Google Chrome is an external browser prerequisite. macOS discovery checks s
 `sealseek-media` is a canvas/media helper, including board creation, reads, uploads and adding existing media. It is not this Skill's generation route. Its CLI credentials can require a separate login even while the dedicated Chrome is logged in. Resolve that dependency and return to the native flow; do not submit a second generation through the helper.
 
 On Windows, use the host's declared shell and text-encoding contract. Keep JSON intact and parse it before selecting fields; a truncated text excerpt is not the complete result. Console replacement characters are inconclusive: inspect UTF-8 bytes or hashes before changing prompts or source files. If native CLI output or redirection is decoded incorrectly, report the host encoding issue. Preserve the existing task ID and submission receipt; recovery inspects that same task and never repeats a paid Send to obtain readable output.
+
+## Video inspection dependency
+
+The npm package manages `@ffprobe-installer/ffprobe` and its platform binary. `doctor --json` includes `checks.ffprobe` with readiness, version and executable source. `INFINITE_CANVAS_FFPROBE_BIN` explicitly overrides the binary; PATH is used when the packaged probe is unavailable. Install with npm optional dependencies enabled. A failed preflight stops before paid submission. For an existing task, dependency repair followed by `task resume` reuses its native session/run and generated video. Exact dimensions and duration require actual metadata inspection.

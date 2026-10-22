@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import {ffprobeStatus} from '../src/ffprobe.mjs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {META,ROOT,need,parse,readJSON,execute,stateRoot,newJSON,redact,safeId} from '../src/core.mjs';
@@ -31,13 +32,13 @@ async function main(argv){
   }
   if(command==='capabilities'){const {args}=parse(argv.slice(1),{booleans:['json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');await automaticCheck();return out({ok:true,...manifest});}
   if(command==='doctor'){
-    const {options:o,args}=parse(argv.slice(1),{values:['canvas'],booleans:['live','json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');await automaticCheck();const checks={node:process.version,entry:path.join(ROOT,'bin/infinite-canvas.mjs'),platform:process.platform,skill:SKILL};
+    const {options:o,args}=parse(argv.slice(1),{values:['canvas'],booleans:['live','json']});need(!args.length,'INVALID_ARGUMENT','Unexpected arguments.');await automaticCheck();const checks={ffprobe:ffprobeStatus(),node:process.version,entry:path.join(ROOT,'bin/infinite-canvas.mjs'),platform:process.platform,skill:SKILL};
     for(const library of ['playwright-core','image-size']){try{await import(library);checks[library]={ok:true};}catch{checks[library]={ok:false};}}
     try{checks.media={ok:true,version:(await execute(process.env.INFINITE_CANVAS_MEDIA_BIN||'sealseek-media',['--version'],{timeout:15000})).stdout.trim()};}catch{checks.media={ok:false};}
     const {ChromeRuntime}=await import('../src/browser-runtime.mjs');const runtime=new ChromeRuntime();
     try{checks.browser=await runtime.configuredLauncher('status')||await runtime.status();}catch(e){checks.browser={ok:false,error:redact(e)};}
     if(o.live){need(o.canvas,'INVALID_ARGUMENT','Live doctor requires --canvas ID.');const {BrowserDriver,LOCATORS}=await import('../src/browser.mjs');const driver=new BrowserDriver();try{await driver.connect(o.canvas,{open:false});const board=await driver.getBoard();checks.live={canvas_id:String(board.id),title:board.title,locators:{}};for(const [k,s]of Object.entries(LOCATORS))checks.live.locators[k]=await driver.page.locator(s).count();}finally{await driver.close();}}
-    const ok=checks.media.ok&&checks['playwright-core'].ok&&checks['image-size'].ok&&checks.browser.ok;if(!ok)process.exitCode=1;return out({ok,checks,browser_ready:!!checks.browser.ready,paid_action:false,end_to_end:'not-tested-by-doctor'});
+    const ok=checks.ffprobe.ok&&checks.media.ok&&checks['playwright-core'].ok&&checks['image-size'].ok&&checks.browser.ok;if(!ok)process.exitCode=1;return out({ok,checks,browser_ready:!!checks.browser.ready,paid_action:false,end_to_end:'not-tested-by-doctor'});
   }
   if(command==='browser'){
     const {args}=parse(rest,{booleans:['json']});need(!args.length&&['status','open'].includes(action),'INVALID_ARGUMENT','Use browser status/open --json.');
@@ -48,6 +49,7 @@ async function main(argv){
   if(command==='video'&&action==='generate'){
     const {options:o,args}=parse(rest,{values:['canvas','prompt','prompt-file','output','request-id'],repeat:['reference'],booleans:['new','submit','dry-run','json']});need(!args.length&&!(o.submit&&o['dry-run']),'INVALID_ARGUMENT','Conflicting options or extra arguments.');need(!!o.prompt!==!!o['prompt-file'],'INVALID_ARGUMENT','Provide exactly one prompt source.');need(!(o.new&&o['request-id']),'INVALID_ARGUMENT','Use new or request-id.');
     const {prepareInput,createJob,summary}=await import('../src/state.mjs');const input=await prepareInput({canvas:o.canvas,prompt:o.prompt??await fs.readFile(o['prompt-file'],'utf8'),references:o.reference,output:o.output});await automaticCheck();
+    const probe=ffprobeStatus();need(probe.ok,'DEPENDENCY_UNAVAILABLE',probe.error?.message,{dependency:'ffprobe',paid_action:false});
     if(!o.submit)return out({ok:true,dry_run:true,paid_action:false,canvas_id:input.canvasId,prompt:input.prompt,references:input.references.map((r,i)=>({label:'图'+(i+1),source:r.source,sha256:r.sha256||null})),workflow:['import-references','new-native-conversation','ordered-attachments','send-prompt','follow-run','download','deduplicate-video','group-original-nodes-in-frame'],generation_submission:'webpage Agent Send button',model:'inherit webpage settings'});
     const {job,reused}=await createJob(input,{requestId:o['request-id'],newRequest:!!o.new});if(!reused){const {spawnWorker}=await import('../src/workflow.mjs');await spawnWorker(job.id);}return out({...summary(job),reused});
   }

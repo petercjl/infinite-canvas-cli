@@ -72,11 +72,15 @@
     "canvasAPI": "sealseek-media >=0.6.7, public CLI commands",
     "libraries": [
       "playwright-core",
-      "image-size"
+      "image-size",
+      "@ffprobe-installer/ffprobe"
     ],
-    "optional": [
-      "ffprobe"
-    ]
+    "ffprobe": {
+      "requiredFor": "video preflight and artifact verification",
+      "discovery": "INFINITE_CANVAS_FFPROBE_BIN, npm platform binary, PATH",
+      "check": "doctor --json -> checks.ffprobe",
+      "recovery": "Reinstall with optional dependencies enabled or configure a working ffprobe; resume saved tasks without resubmission."
+    }
   },
   "platforms": {
     "codex:macos": "tested: six native Agent video tasks across two boards; one tab per board; downloads, deduplication and Frame readback verified",

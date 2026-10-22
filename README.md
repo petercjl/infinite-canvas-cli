@@ -52,3 +52,5 @@ See the bundled [Skill](skills/infinite-canvas-video/SKILL.md) and [runtime comm
 Canvas operations reuse the existing helper CLI. Frame grouping provides the missing atomic operation for reparenting existing nodes, with backup, fresh-read conflict checks and save/readback verification. Website-authenticated read and canvas operations are isolated in one browser adapter. The adapter does not directly submit generation endpoints.
 
 The service has no documented compare-and-swap canvas save contract. Avoid concurrent manual editing during a job; detected unsaved or conflicting changes stop progress for recovery. Canvas synchronization relies on the current webpage editor adapter and must be revalidated when the webpage changes.
+
+Video verification uses the npm-managed platform ffprobe, checked before video submission and exposed by `doctor --json`. Install with optional dependencies enabled. Advanced hosts can configure `INFINITE_CANVAS_FFPROBE_BIN`; see THIRD_PARTY_NOTICES.md for supported binaries and licensing. Existing generated tasks resume verification after dependency repair without another paid submission.

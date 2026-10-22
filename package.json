@@ -12,7 +12,8 @@
     "skills",
     "capabilities.json",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "engines": {
     "node": ">=22"
@@ -28,8 +29,9 @@
     "check:packed": "node scripts/check-packed-install.mjs"
   },
   "dependencies": {
-    "playwright-core": "1.62.1",
-    "image-size": "2.0.4"
+    "@ffprobe-installer/ffprobe": "2.1.2",
+    "image-size": "2.0.4",
+    "playwright-core": "1.62.1"
   },
   "repository": {
     "type": "git",

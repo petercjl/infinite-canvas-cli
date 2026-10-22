@@ -17,7 +17,7 @@ Return the local MP4 from `artifacts[].path`, task ID, board ID and Frame ID. Su
 
 Resolve `infinite-canvas` from PATH. Run `version --json`, `capabilities --json` and `skill source --json` to inspect the installed implementation and current canonical Skill. Minimum contract: native Agent Send, ordered references, existing-node grouping, task get/wait/resume, local video output. Load the selected host adapter in `adapters/`; `generic.json` is the portable fallback. If the entry or required feature is missing, return `CAPABILITY_UNAVAILABLE`; report the missing dependency instead of substituting another generation provider.
 
-External dependencies are Node.js 22+, `playwright-core` and `image-size` (package managed), installed Google Chrome on macOS or Windows, and `sealseek-media` with image upload, canvas get/add capabilities. This Skill invokes the helper through the CLI contract; it does not compose another generation Skill. Browser authentication stays in the user's dedicated Chrome profile. Never copy cookies or tokens into a prompt, output or package.
+External dependencies are Node.js 22+, `playwright-core` and `image-size` and platform `ffprobe` (package managed), installed Google Chrome on macOS or Windows, and `sealseek-media` with image upload, canvas get/add capabilities. This Skill invokes the helper through the CLI contract; it does not compose another generation Skill. Browser authentication stays in the user's dedicated Chrome profile. Never copy cookies or tokens into a prompt, output or package.
 
 ## Generation route and helper boundary
 
@@ -33,7 +33,7 @@ Treat plugin installation/update as one operation covering the CLI and this comp
 
 ## Main line
 
-1. Validate required inputs and authorization. Run `doctor --json`: its browser check means Chrome is available to launch; `browser_ready` separately reports runtime readiness. Use `browser open --json` to prepare Chrome. The CLI discovers and launches the system browser itself with fixed loopback 9223 and the persistent current-user `.dianshang-chrome-profile`; a separate launcher installation is unnecessary. For a UI compatibility check use `doctor --live --canvas ID --json`. On missing login, have the user sign in in that Chrome window, then return here. The CLI uses CDP port 9223 and the dedicated ecommerce profile. Enforce the single-tab constraint below before any submission or canvas write.
+1. Validate required inputs and authorization. Run `doctor --json` and require `checks.ffprobe.ok=true` before video submission. Its browser check means Chrome is available to launch; `browser_ready` separately reports runtime readiness. Use `browser open --json` to prepare Chrome. The CLI discovers and launches the system browser itself with fixed loopback 9223 and the persistent current-user `.dianshang-chrome-profile`; a separate launcher installation is unnecessary. For a UI compatibility check use `doctor --live --canvas ID --json`. On missing login, have the user sign in in that Chrome window, then return here. The CLI uses CDP port 9223 and the dedicated ecommerce profile. Enforce the single-tab constraint below before any submission or canvas write.
 2. Prepare the exact prompt in a new file when needed; preserve any existing file. Run `video generate --canvas ID --prompt-file FILE --reference IMAGE1 --reference IMAGE2 --dry-run --json`, repeating `--reference` in order. Dry run checks local inputs; it does not prove provider availability.
 3. For an authorized real request, run the same inputs with `--submit --json`. Save the returned task ID immediately. Repeated identical inputs reuse the same task. `--request-id KEY` provides caller-controlled idempotency; `--new` deliberately creates a new paid task and requires explicit intent to generate another video.
 4. Follow `task wait TASK_ID --timeout 30 --json` or `task get TASK_ID --json`. The worker imports references, creates a new native Agent conversation, attaches images, pastes the exact prompt and clicks Send. Status/history reads track the captured session and run. Generation is submitted only through the native UI.
@@ -53,6 +53,7 @@ If duplicate tabs for a board are detected, stop new submissions and writes with
 
 ## Branches and recovery
 
+- `DEPENDENCY_UNAVAILABLE` / `INSPECTION_UNAVAILABLE`: read `doctor --json`, restore npm optional dependencies or configure `INFINITE_CANVAS_FFPROBE_BIN` to a working probe. For an already generated video, resume the same task after repair; dependency recovery never authorizes another generation. Return to step 1 before submission or step 4 after submission.
 - `CHROME_NOT_FOUND`: install Google Chrome or set `INFINITE_CANVAS_CHROME_BIN` to its actual executable; return to step 1.
 - `BROWSER_PORT_CONFLICT` / `BROWSER_OWNERSHIP_UNVERIFIED`: preserve existing browser processes/profile files, resolve the 9223 ownership conflict, then return to step 1.
 - `BROWSER_START_TIMEOUT`: inspect the dedicated profile’s existing Chrome and startup permissions; preserve task IDs and return to step 1 after readiness is restored.
@@ -69,6 +70,6 @@ Read [runtime reference](references/runtime.md) only when command details or rec
 
 ## QA and evolution
 
-Check one clean user message, captured native session/run IDs, attachment order at submission, exactly one result URL, returned reference metadata when provided, artifact bytes/hash and saved Frame membership. Report unavailable reference metadata or absent ffprobe verification honestly. Scope claims to actually tested hosts and operating systems. The current browser adapter needs live validation after webpage changes; independent clean-context regression is user gated.
+Check one clean user message, captured native session/run IDs, attachment order at submission, exactly one result URL, returned reference metadata when provided, artifact bytes/hash and saved Frame membership. Verify actual video dimensions and duration through the packaged ffprobe; prompt parameters and MP4 headers alone do not prove these values. Report unavailable reference metadata honestly. Scope claims to actually tested hosts and operating systems. The current browser adapter needs live validation after webpage changes; independent clean-context regression is user gated.
 
 Install/update only the executing/requested Agent through package-managed `skill install/update --agent AGENT_NAME --path RESOLVED_SKILL_DIR`. A named adapter supplies a default only for that host; other valid Agent names use the generic adapter and their own explicitly resolved Skill directory. The package is the source of truth. Automatic update detection is bounded and can be disabled; installation is explicit. Keep model defaults and private assets outside the package.

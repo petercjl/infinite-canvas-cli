@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import {runFFprobe} from './ffprobe.mjs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {spawn} from 'node:child_process';
@@ -55,7 +56,9 @@ async function downloadResult(job){
   need(!/text|json/.test(response.headers.get('content-type')||''),'OUTPUT_CONTRACT_FAILED','Video URL returned text.');
   const chunks=[];let size=0;for await(const c of response.body){size+=c.length;need(size<=1024*1024*1024,'OUTPUT_CONTRACT_FAILED','Video exceeds the download limit.');chunks.push(c);}const data=Buffer.concat(chunks);need(data.length>0,'OUTPUT_CONTRACT_FAILED','Video is empty.');
   if(await exists(file))need(hash(await fs.readFile(file))===hash(data),'OUTPUT_EXISTS','Preserve a different existing output file.');else await newFile(file,data);
-  let inspect;try{const r=await execute('ffprobe',['-v','error','-show_entries','stream=codec_type,width,height,duration:format=duration,size','-of','json',file],{timeout:20000});inspect=JSON.parse(r.stdout);need(inspect.streams?.some(s=>s.codec_type==='video'&&s.width>0&&s.height>0),'OUTPUT_CONTRACT_FAILED','Downloaded file has no video stream.');}catch(e){if(e.code!=='ENOENT')throw e;job.warnings.push('ffprobe is unavailable; dimensions and duration are unverified.');}
+  const probe=runFFprobe(['-v','error','-show_entries','stream=codec_type,width,height,duration:format=duration,size','-of','json',file]);
+  need(!probe.error&&probe.status===0,'INSPECTION_UNAVAILABLE','Saved video could not be inspected. Run doctor --json, repair ffprobe and resume this task without generating again.');
+  const inspect=JSON.parse(probe.stdout);need(inspect.streams?.some(s=>s.codec_type==='video'&&s.width>0&&s.height>0),'OUTPUT_CONTRACT_FAILED','Downloaded file has no video stream.');
   job.artifacts=[{path:file,bytes:data.length,sha256:hash(data),inspect:inspect||null}];await saveJob(job);
 }
 function resolveVideoMatches(job,matches){
