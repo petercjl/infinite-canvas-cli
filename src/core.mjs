@@ -4,12 +4,10 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
+export {execute} from './process-execution.mjs';
 
 export const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export const META=JSON.parse(await fs.readFile(path.join(ROOT,'package.json'),'utf8'));
-export const execute=promisify(execFile);
 export class Fault extends Error {constructor(code,message,details={}){super(message);this.code=code;this.details=details;}}
 export function need(value,code,message,details){if(!value)throw new Fault(code,message,details);return value;}
 export const canonical=v=>JSON.stringify(sort(v));
