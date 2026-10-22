@@ -1,0 +1,13 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {ROOT} from './core.mjs';
+import {manifest} from './contracts.mjs';
+const target=path.join(ROOT,'capabilities.json');
+const stat=await fs.lstat(target);
+if(!stat.isFile()||stat.isSymbolicLink())throw Error('Unmanaged capability manifest');
+const old=await fs.readFile(target);
+const backup=target+'.'+crypto.randomUUID()+'.backup';
+await fs.copyFile(target,backup,fs.constants.COPYFILE_EXCL);
+if(!(await fs.readFile(backup)).equals(old))throw Error('Manifest backup failed');
+await fs.writeFile(target,JSON.stringify(manifest,null,2)+'\n');

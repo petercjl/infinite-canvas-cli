@@ -1,0 +1,5 @@
+{
+  "hooks": {
+    "after:bump": "node src/sync-contract.mjs && git add capabilities.json"
+  }
+}

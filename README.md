@@ -1,0 +1,46 @@
+# Infinite Canvas CLI
+
+`@petercjl/infinite-canvas-cli` uses an existing SealSeek Infinite Canvas board to generate videos through its native Agent conversation. It imports ordered reference images, sends the supplied prompt in a fresh conversation, downloads the video, and groups the original image nodes and video node in a Frame.
+
+This package requires Node.js 22+, the independent ecommerce Chrome launcher and an installed `sealseek-media` CLI supporting image upload and canvas get/add. The browser uses port 9223 and the dedicated ecommerce profile. The website supplies the selected model and authenticated account. Each authorized generation can incur charges.
+
+Each board file uses exactly one browser tab. Concurrent videos run in separate Agent conversations within that tab; UI submissions and canvas writes are queued while remote generation runs in parallel. Duplicate tabs must be resolved before submission or saving.
+
+## Agent usage
+
+Provide the board ID, prompt and reference image attachments in their intended order. Send the Agent:
+
+> 使用 infinite-canvas，画板 ID 为「画板ID」，按所附图片顺序作为图1、图2，生成视频：「完整提示词」。
+
+To install:
+
+> 安装 @petercjl/infinite-canvas-cli，并将配套 Skill 安装到本机 Codex。
+
+To update:
+
+> 更新 @petercjl/infinite-canvas-cli 及其本机 Codex 配套 Skill。
+
+To recover:
+
+> 使用 infinite-canvas，恢复任务「任务ID」。
+
+To update the selected local Codex Skill:
+
+> 将 infinite-canvas 当前安装包配套的 Skill 同步到本机 Codex。
+
+Codex/macOS has completed six live video tasks across two boards. Other Agent adapters require runtime verification.
+
+## Developer entry points
+
+```sh
+npm install
+npm test
+node bin/infinite-canvas.mjs --help
+node bin/infinite-canvas.mjs doctor --json
+```
+
+See the bundled [Skill](skills/infinite-canvas-video/SKILL.md) and [runtime commands](skills/infinite-canvas-video/references/runtime.md). `capabilities --json` exposes machine-readable contracts. Video generation defaults to dry run; `--submit` starts a background job and returns its task ID. Resume never clicks Send again after a submission intent has been recorded.
+
+Canvas operations reuse the existing helper CLI. Frame grouping provides the missing atomic operation for reparenting existing nodes, with backup, fresh-read conflict checks and save/readback verification. Website-authenticated read and canvas operations are isolated in one browser adapter. The adapter does not directly submit generation endpoints.
+
+The service has no documented compare-and-swap canvas save contract. Avoid concurrent manual editing during a job; detected unsaved or conflicting changes stop progress for recovery. Canvas synchronization relies on the current webpage editor adapter and must be revalidated when the webpage changes.

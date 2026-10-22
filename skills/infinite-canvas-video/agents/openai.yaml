@@ -1,0 +1,4 @@
+interface:
+  display_name: "无限画板视频"
+  short_description: "通过网页 Agent 生成参考图视频并将输入和成片归入同一 Frame"
+  default_prompt: "使用 $infinite-canvas-video 按提供的画板、提示词和参考图片生成短视频。"

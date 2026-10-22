@@ -1,0 +1,24 @@
+{
+  "schema": "portable-skill-adapter",
+  "platform": "codex",
+  "mappings": [
+    {
+      "capability_id": "canvas.video.execute",
+      "status": "implemented",
+      "features": [
+        "native-agent-send",
+        "new-conversation",
+        "ordered-reference-images",
+        "canvas-import",
+        "existing-node-frame-group",
+        "task-recovery",
+        "local-video-output"
+      ],
+      "implementation": {
+        "kind": "cli",
+        "command": "infinite-canvas",
+        "instructions": "Resolve from PATH. Run version, capabilities and doctor. Requires Node.js >=22, ecommerce-browser and sealseek-media. Use structured JSON. Codex/macOS end-to-end verified with six native Agent videos across two boards, one tab per board, downloads and saved Frame readback. Other hosts require their own runtime validation."
+      }
+    }
+  ]
+}

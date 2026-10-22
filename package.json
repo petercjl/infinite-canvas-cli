@@ -1,0 +1,40 @@
+{
+  "name": "@petercjl/infinite-canvas-cli",
+  "version": "0.1.0-dev.0",
+  "description": "Drive native Infinite Canvas Agent conversations and organize reference images and results in a Frame.",
+  "type": "module",
+  "bin": {
+    "infinite-canvas": "bin/infinite-canvas.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "capabilities.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/infinite-canvas.mjs && node --test"
+  },
+  "dependencies": {
+    "playwright-core": "1.62.1",
+    "image-size": "2.0.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/petercjl/infinite-canvas-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/petercjl/infinite-canvas-cli/issues"
+  },
+  "homepage": "https://github.com/petercjl/infinite-canvas-cli#readme"
+}

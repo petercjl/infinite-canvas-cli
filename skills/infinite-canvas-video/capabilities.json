@@ -1,0 +1,52 @@
+{
+  "schema": "portable-skill-capabilities",
+  "schema_version": "1.0.0",
+  "skill": "infinite-canvas-video",
+  "target_platforms": [
+    "codex",
+    "generic"
+  ],
+  "host_resolution": {
+    "fallback_adapter": "generic"
+  },
+  "capabilities": [
+    {
+      "id": "canvas.video.execute",
+      "purpose": "Execute native Agent video generation and verified canvas grouping",
+      "required": true,
+      "required_features": [
+        "native-agent-send",
+        "new-conversation",
+        "ordered-reference-images",
+        "canvas-import",
+        "existing-node-frame-group",
+        "task-recovery",
+        "local-video-output"
+      ],
+      "input_fields": [
+        "canvas_id",
+        "prompt",
+        "references"
+      ],
+      "output_fields": [
+        "task_id",
+        "status",
+        "session_id",
+        "run_id",
+        "frame_id",
+        "artifacts"
+      ],
+      "side_effects": {
+        "external_mutation": true,
+        "may_cost_money": true,
+        "authorization": "An authorized video request permits one native generation; resume never resubmits."
+      },
+      "errors": [
+        "CAPABILITY_UNAVAILABLE",
+        "SUBMISSION_UNCERTAIN",
+        "CANVAS_SYNC_PENDING",
+        "OUTPUT_CONTRACT_FAILED"
+      ]
+    }
+  ]
+}
